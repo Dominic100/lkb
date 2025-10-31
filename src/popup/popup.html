@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocalFirst Knowledge Base</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="title">LocalFirst KB</h1>
+      <p class="subtitle">Your private knowledge vault</p>
+    </header>
+
+    <!-- Gemini Status Badge -->
+    <div id="geminiStatus" class="gemini-status hidden">
+      <span class="status-icon">⚡</span>
+      <span class="status-text">Checking AI...</span>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+      <input 
+        type="text" 
+        id="searchInput" 
+        class="search-input" 
+        placeholder="Search your saved knowledge..."
+      >
+    </div>
+
+    <!-- Tag Filter -->
+    <div class="tag-filter-container" id="tagFilterContainer" style="display: none;">
+        <div class="tag-filter-header">
+            <span>Filter by tags:</span>
+            <button id="clearTagsBtn" class="btn-clear-tags">✕ Clear</button>
+        </div>
+        <div id="tagFilterList" class="tag-filter-list">
+            <!-- Tags will be populated here -->
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button id="saveCurrentPage" class="btn btn-primary">
+        💾 Save Current Page
+      </button>
+      <button id="chatButton" class="btn btn-secondary">
+        💬 Chat with Knowledge
+      </button>
+    </div>
+
+    <!-- Insights Button -->
+    <div class="insights-button-container">
+        <button id="insightsBtn" class="btn-insights">📊 Reading Insights</button>
+    </div>
+
+    <!-- Insights Modal (hidden by default) -->
+    <div id="insightsModal" class="insights-modal hidden">
+        <div class="insights-content">
+            <div class="insights-header">
+            <h2>📊 Your Reading Insights</h2>
+            <button id="closeInsightsBtn" class="btn-close">×</button>
+            </div>
+            
+            <div class="insights-stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalArticles">0</div>
+                <div class="stat-label">Total Articles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="thisWeek">0</div>
+                <div class="stat-label">This Week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="mostActiveDay">-</div>
+                <div class="stat-label">Most Active Day</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgPerDay">0</div>
+                <div class="stat-label">Avg Per Day</div>
+            </div>
+            </div>
+            
+            <div class="insights-chart">
+            <h3>Last 7 Days Activity</h3>
+            <div id="activityChart" class="activity-chart">
+                <!-- Chart bars will be generated here -->
+            </div>
+            </div>
+            
+            <div class="insights-summary" id="insightsSummary">
+            <!-- Summary text will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="notesModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="closeNotesBtn" class="modal-close-btn">&times;</button>
+            <h3>Note for: <span id="noteArticleTitle"></span></h3>
+            <textarea id="noteTextarea" placeholder="Add your personal notes, highlights, and connections here..."></textarea>
+            <div class="modal-actions">
+            <button id="rephraseNoteBtn" class="btn-secondary">✨ Rephrase</button>
+            
+            <button id="saveNoteBtn" class="btn-primary">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="articleViewModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="closeArticleViewBtn" class="modal-close-btn">&times;</button>
+            <h3 id="articleViewTitle">Article Title</h3>
+            
+            <div id="articleViewContent">
+            ... loading content ...
+            </div>
+            
+            <div class="modal-actions">
+            <button id="openSourceUrlBtn" class="btn-secondary">Open Original Source</button>
+            <button id="openInTabBtn" class="btn-primary">View in New Tab</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Articles List -->
+    <div class="articles-section">
+      <div class="section-header">
+        <h2 class="section-title">Saved Articles</h2>
+        <div class="header-actions">
+            <span id="articleCount" class="count-badge">0</span>
+            <button id="multiSummarizeBtn" class="btn-link" title="Summarize selected articles" style="display: none;">📋 Summarize</button>
+        </div>
+      </div>
+      
+      <div id="articlesList" class="articles-list">
+        <div class="empty-state" id="emptyState">
+          <p>📚 No articles saved yet</p>
+          <p class="empty-hint">Click "Save Current Page" to get started</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat View (hidden by default) -->
+    <div id="chatView" class="chat-view hidden">
+      <div class="chat-header">
+        <button id="backToList" class="btn-back">← Back to Articles</button>
+        <h3>Chat with Your Knowledge</h3>
+        <button id="chatHistoryBtn" class="btn-icon" title="View chat history">📚</button>
+      </div>
+      
+      <!-- Chat History Sidebar (hidden by default) -->
+      <div id="chatHistorySidebar" class="chat-history-sidebar hidden">
+        <div class="sidebar-header">
+          <h4>Previous Conversations</h4>
+          <button id="closeChatHistory" class="btn-close">×</button>
+        </div>
+        <div id="chatHistoryList" class="chat-history-list">
+          <!-- Chat history items will be inserted here -->
+        </div>
+        <button id="newChatBtn" class="btn-new-chat">+ New Chat</button>
+      </div>
+      
+      <div id="chatMessages" class="chat-messages">
+        <!-- Chat messages will appear here -->
+      </div>
+      
+      <div class="chat-input-container">
+        <input 
+          type="text" 
+          id="chatInput" 
+          class="chat-input" 
+          placeholder="Ask me anything about your saved knowledge..."
+        >
+        <button id="sendChat" class="btn-send">Send</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <button id="settingsButton" class="btn-link">⚙️ Settings</button>
+      <button id="exportButton" class="btn-link">📤 Export</button>
+      <button id="importButton" class="btn-link">📥 Import</button>
+      <span class="privacy-badge">🔒 All data stays local</span>
+    </footer>
+  </div>
+
+  <script src="../lib/showdown.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

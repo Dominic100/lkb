@@ -1,0 +1,1183 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 400px;
+  height: 600px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f8f9fa;
+  color: #212529;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 400px;
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Gemini Status Badge */
+.gemini-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-bottom: 1px solid #047857;
+  animation: slideDown 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+.gemini-status.hidden {
+  display: none;
+}
+
+.gemini-status.available {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-bottom: 1px solid #047857;
+}
+
+.gemini-status.downloading {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-bottom: 1px solid #b45309;
+}
+
+.gemini-status.unavailable {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  border-bottom: 1px solid #374151;
+}
+
+.status-icon {
+  font-size: 14px;
+  animation: pulse 2s infinite;
+}
+
+.status-text {
+  letter-spacing: 0.5px;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Search */
+.search-container {
+  padding: 10px 16px;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Actions */
+.actions {
+  padding: 8px 16px;
+  display: flex;
+  gap: 8px;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #f1f3f5;
+  color: #495057;
+}
+
+.btn-secondary:hover {
+  background: #e9ecef;
+}
+
+/* Articles Section */
+.articles-section {
+  flex: 1;
+  overflow-y: auto;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.count-badge {
+  background: #667eea;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.articles-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #868e96;
+}
+
+.empty-state p:first-child {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: #adb5bd;
+}
+
+/* Article Item */
+.article-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f3f5;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.article-item:hover {
+  background: #f8f9fa;
+}
+
+.article-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.article-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #868e96;
+  margin-bottom: 6px;
+}
+
+.article-summary {
+  font-size: 12px;
+  color: #495057;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.article-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  font-size: 10px;
+  border: 1px solid #dee2e6;
+  background: white;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  text-align: center;
+}
+
+.btn-small:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.btn-delete {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-delete:hover {
+  background: #dc3545;
+  color: white;
+}
+
+/* Chat View */
+.chat-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: white;
+  position: relative;
+  min-height: 0;
+}
+
+.chat-view.hidden {
+  display: none;
+}
+
+.chat-header {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.chat-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  flex: 1;
+  margin: 0 8px;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.btn-icon:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+/* Chat History Sidebar */
+.chat-history-sidebar {
+  position: absolute;
+  right: 0;
+  top: 50px;
+  width: 220px;
+  height: calc(100% - 100px);
+  background: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  animation: slideInRight 0.3s ease-out;
+}
+
+.chat-history-sidebar.hidden {
+  display: none;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #e9ecef;
+  background: white;
+  flex-shrink: 0;
+}
+
+.sidebar-header h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+}
+
+.btn-close:hover {
+  color: #212529;
+}
+
+.chat-history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.chat-history-item {
+  padding: 8px;
+  margin-bottom: 6px;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-history-item:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.chat-history-item.active {
+  border-color: #667eea;
+  background: #f0f2ff;
+}
+
+.chat-item-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.chat-item-date {
+  font-size: 10px;
+  color: #868e96;
+}
+
+.btn-new-chat {
+  margin: 8px;
+  padding: 8px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-new-chat:hover {
+  background: #5568d3;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(220px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-message {
+  padding: 10px 12px;
+  border-radius: 8px;
+  max-width: 85%;
+  font-size: 13px;
+  line-height: 1.5;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  background: #667eea;
+  color: white;
+}
+
+.chat-message.assistant {
+  align-self: flex-start;
+  background: #f1f3f5;
+  color: #212529;
+}
+
+.chat-input-container {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.btn-send {
+  padding: 10px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-send:hover {
+  background: #5568d3;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  flex-shrink: 0;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.privacy-badge {
+  font-size: 9px;
+  color: #28a745;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.article-item.selected {
+  background: #e7f0ff;
+  border-left: 4px solid #667eea;
+}
+
+.article-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+/* Tag Filter */
+.tag-filter-container {
+  padding: 8px 16px;
+  background: #e7f0ff;
+  border-bottom: 1px solid #d0e1ff;
+}
+
+.tag-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
+.btn-clear-tags {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-clear-tags:hover {
+  text-decoration: underline;
+}
+
+.tag-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-filter-item {
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid #667eea;
+  color: #667eea;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tag-filter-item:hover {
+  background: #667eea;
+  color: white;
+}
+
+.tag-filter-item.active {
+  background: #667eea;
+  color: white;
+}
+
+.article-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.tag {
+  display: inline-block;
+  padding: 3px 8px;
+  background: #e9ecef;
+  color: #495057;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag:hover {
+  background: #667eea;
+  color: white;
+}
+
+.btn-tag {
+  color: #667eea;
+  border-color: #667eea;
+  font-size: 12px;
+}
+
+.btn-tag:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Insights Button */
+.insights-button-container {
+  padding: 8px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-insights {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-insights:hover {
+  transform: translateY(-2px);
+}
+
+/* Insights Modal */
+.insights-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.insights-modal.hidden {
+  display: none;
+}
+
+.insights-content {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.insights-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f1f3f5;
+  padding-bottom: 12px;
+}
+
+.insights-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #212529;
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.btn-close:hover {
+  color: #212529;
+}
+
+/* Stats Cards */
+.insights-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e9ecef;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+/* Activity Chart */
+.insights-chart {
+  margin-bottom: 20px;
+}
+
+.insights-chart h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin: 0 0 12px 0;
+}
+
+.activity-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 120px;
+  gap: 6px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.chart-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px 4px 0 0;
+  min-height: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.chart-bar:hover {
+  opacity: 0.8;
+}
+
+.chart-bar-label {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.chart-bar-value {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+/* Insights Summary */
+.insights-summary {
+  padding: 12px;
+  background: #e7f0ff;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #495057;
+}
+
+.insights-summary strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* Scrollbar */
+.articles-list::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar,
+.chat-history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.articles-list::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track,
+.chat-history-list::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+.articles-list::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb,
+.chat-history-list::-webkit-scrollbar-thumb {
+  background: #dee2e6;
+  border-radius: 3px;
+}
+
+.articles-list::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.chat-history-list::-webkit-scrollbar-thumb:hover {
+  background: #adb5bd;
+}
+
+/* ============================================ */
+/* Notes Editor Modal                           */
+/* ============================================ */
+
+/* Style the modal overlay (similar to .insights-modal) */
+#notesModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  /* Add a simple fade-in animation */
+  animation: modalFadeIn 0.2s ease-out; 
+}
+
+#notesModal.hidden {
+  display: none;
+}
+
+/* Style the modal content box (similar to .insights-content) */
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  position: relative; /* For positioning the close button */
+}
+
+/* Style the close button (similar to .btn-close) */
+#closeNotesBtn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+}
+
+#closeNotesBtn:hover {
+  color: #212529;
+}
+
+/* Style the title inside the modal */
+.modal-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0 0 16px 0;
+  /* Avoid title overlapping the close button */
+  padding-right: 20px; 
+}
+
+/* Style the notes text area */
+#noteTextarea {
+  width: 100%;
+  height: 200px; /* Default height */
+  min-height: 150px; /* Allow shrinking */
+  padding: 10px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin-bottom: 16px;
+  resize: vertical; /* Allow user to resize vertically */
+  transition: all 0.2s;
+}
+
+#noteTextarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Style the container for the modal buttons */
+.modal-actions {
+  display: flex;
+  /* Align buttons to the right */
+  justify-content: flex-end; 
+  gap: 8px;
+  /* Ensure this container doesn't shrink */
+  flex-shrink: 0; 
+}
+
+/* Base style for ALL buttons in the modal-actions bar */
+.modal-actions button {
+  /* Remove the flex: 1 stretch from .btn-primary/etc */
+  flex: none; 
+  
+  /* Use padding and font-size similar to .btn */
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent; /* Base border */
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Style for the PRIMARY modal action button ("Save") */
+#saveNoteBtn {
+  /* This mimics your .btn-primary style */
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+#saveNoteBtn:hover {
+  background: #5568d3;
+  border-color: #5568d3;
+  transform: translateY(-1px);
+}
+
+#saveNoteBtn:disabled {
+  background: #adb5bd;
+  border-color: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Style for the SECONDARY modal action buttons ("Proofread", "Rephrase") */
+#rephraseNoteBtn {
+  /* This mimics your .btn-small / .btn-tag style (white with border) */
+  background: white;
+  color: #495057;
+  border-color: #dee2e6; /* Border like .btn-small */
+}
+
+#rephraseNoteBtn:hover {
+  background: #f8f9fa; /* Light hover like .btn-small */
+  border-color: #adb5bd;
+}
+
+#rephraseNoteBtn:disabled {
+  background: #f8f9fa;
+  color: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* A simple fade-in animation for the modal */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================ */
+/* Article View Modal                           */
+/* ============================================ */
+
+#articleViewModal .modal-content {
+  /* Make this modal larger for reading */
+  width: 380px;
+  max-width: 95%;
+  /* Let it use more of the screen height */
+  max-height: 90vh; 
+}
+
+#articleViewContent {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+
+  /* This is the key to making it scrollable */
+  max-height: 400px;
+  overflow-y: auto;
+  
+  /* Basic markdown styling */
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+#articleViewContent p {
+  margin-bottom: 12px;
+}
+
+#articleViewContent h1,
+#articleViewContent h2,
+#articleViewContent h3 {
+  font-weight: 600;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  color: #212529;
+}
+
+#articleViewContent h1 { font-size: 20px; }
+#articleViewContent h2 { font-size: 18px; }
+#articleViewContent h3 { font-size: 16px; }
+
+#articleViewContent ul,
+#articleViewContent ol {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+#articleViewContent li {
+  margin-bottom: 4px;
+}
+
+#articleViewContent blockquote {
+  padding-left: 12px;
+  border-left: 3px solid #667eea;
+  color: #495057;
+  font-style: italic;
+  margin: 12px 0;
+}
+
+#articleViewContent code {
+  background: #e9ecef;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* ============================================ */
+/* Generic Modal Overlay Style                  */
+/* (Used by NotesModal and ArticleViewModal)    */
+/* ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalFadeIn 0.2s ease-out; /* Uses your existing @keyframe */
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
