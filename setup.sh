@@ -9,13 +9,13 @@ DOCKER_COMPOSE_FILE="native/docker-compose.yml"
 ENV_FILE="native/.env"
 ENV_EXAMPLE_FILE="native/.env.example"
 MODELS_DEFAULT="qwen2.5:7b"
-EXTENSION_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/extension"
-NATIVE_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/native"
 OPEN_CHROME_AFTER_SETUP="true"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 DOWNLOAD_DIR="${PROJECT_DIR}/.downloaded-extension"
+EXTENSION_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/extension"
+NATIVE_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/native"
 
 log() {
   printf '%s\n' "[setup] $*"

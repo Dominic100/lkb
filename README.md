@@ -49,8 +49,8 @@ Use this if you publish the extension to the Chrome Web Store.
    - `lkb-extension.zip`
    - `lkb-native.zip`
 2. Run the setup script directly from GitHub:
-   - macOS/Linux: `curl -fsSL https://raw.githubusercontent.com/Dominic100/lkb/main/setup.sh | bash -s -- --mode webstore`
-   - Windows PowerShell: `powershell -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/Dominic100/lkb/main/setup.ps1 -OutFile $env:TEMP\setup.ps1; & $env:TEMP\setup.ps1 -Mode webstore"`
+   - macOS/Linux: `curl -fsSL https://raw.githubusercontent.com/Dominic100/lkb/v2/setup.sh | bash -s -- --mode webstore`
+   - Windows PowerShell: `powershell -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/Dominic100/lkb/v2/setup.ps1 -OutFile $env:TEMP\setup.ps1; & $env:TEMP\setup.ps1 -Mode webstore"`
 3. Install the browser extension from the Chrome Web Store.
 4. Keep the local setup running the first time so Ollama can pull the model into the local Docker volume.
 
@@ -64,8 +64,8 @@ Use this if you do not publish to the Chrome Web Store.
    - `lkb-extension.zip`
    - `lkb-native.zip`
 2. Run the setup script directly from GitHub:
-   - macOS/Linux: `curl -fsSL https://raw.githubusercontent.com/Dominic100/lkb/main/setup.sh | bash -s -- --mode local`
-   - Windows PowerShell: `powershell -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/Dominic100/lkb/main/setup.ps1 -OutFile $env:TEMP\setup.ps1; & $env:TEMP\setup.ps1 -Mode local"`
+   - macOS/Linux: `curl -fsSL https://raw.githubusercontent.com/Dominic100/lkb/v2/setup.sh | bash -s -- --mode local`
+   - Windows PowerShell: `powershell -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/Dominic100/lkb/v2/setup.ps1 -OutFile $env:TEMP\setup.ps1; & $env:TEMP\setup.ps1 -Mode local"`
 3. Open `chrome://extensions`.
 4. Enable Developer Mode.
 5. Click Load unpacked.

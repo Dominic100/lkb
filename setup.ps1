@@ -16,7 +16,14 @@ $ErrorActionPreference = "Stop"
 $DockerComposeFile = "native/docker-compose.yml"
 $EnvFile = "native/.env"
 $EnvExampleFile = "native/.env.example"
-$DownloadDir = Join-Path $PSScriptRoot ".downloaded-extension"
+$ScriptRoot = if ($PSScriptRoot -and $PSScriptRoot.Trim().Length -gt 0) {
+  $PSScriptRoot
+} elseif ($MyInvocation.MyCommand.Path) {
+  Split-Path -Parent $MyInvocation.MyCommand.Path
+} else {
+  (Get-Location).Path
+}
+$DownloadDir = Join-Path $ScriptRoot ".downloaded-extension"
 $OpenBrowserAfterSetup = $true
 
 function Write-Log {
