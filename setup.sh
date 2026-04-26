@@ -11,7 +11,7 @@ ENV_EXAMPLE_FILE="native/.env.example"
 MODELS_DEFAULT="qwen2.5:7b"
 OPEN_CHROME_AFTER_SETUP="true"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-${0}}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 DOWNLOAD_DIR="${PROJECT_DIR}/.downloaded-extension"
 EXTENSION_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/extension"
@@ -134,24 +134,26 @@ prepare_bundles() {
   log "Downloading native bundle from ${NATIVE_BUNDLE_URL}"
   curl -fsSL "$NATIVE_BUNDLE_URL" -o "$native_bundle_path"
 
-  log "Extracting extension bundle to ${EXTENSION_DIR}"
-  rm -rf "$EXTENSION_DIR"
-  mkdir -p "$EXTENSION_DIR"
-  unzip -q "$extension_bundle_path" -d "$DOWNLOAD_DIR"
-  if [[ -d "${DOWNLOAD_DIR}/extension" ]]; then
-    mv "${DOWNLOAD_DIR}/extension" "$EXTENSION_DIR"
+  local extension_extract_dir="${DOWNLOAD_DIR}/extension-extracted"
+  local native_extract_dir="${DOWNLOAD_DIR}/native-extracted"
+
+  rm -rf "$EXTENSION_DIR" "$NATIVE_DIR" "$extension_extract_dir" "$native_extract_dir"
+  mkdir -p "$EXTENSION_DIR" "$NATIVE_DIR" "$extension_extract_dir" "$native_extract_dir"
+
+  log "Extracting extension bundle to ${extension_extract_dir}"
+  unzip -q "$extension_bundle_path" -d "$extension_extract_dir"
+  if [[ -d "${extension_extract_dir}/extension" ]]; then
+    cp -R "${extension_extract_dir}/extension/." "$EXTENSION_DIR/"
   else
-    mv "${DOWNLOAD_DIR}/manifest.json" "${DOWNLOAD_DIR}/src" "${DOWNLOAD_DIR}/assets" "$EXTENSION_DIR"/ 2>/dev/null || true
+    cp -R "${extension_extract_dir}/." "$EXTENSION_DIR/"
   fi
 
-  log "Extracting native bundle to ${NATIVE_DIR}"
-  rm -rf "$NATIVE_DIR"
-  mkdir -p "$NATIVE_DIR"
-  unzip -q "$native_bundle_path" -d "$DOWNLOAD_DIR"
-  if [[ -d "${DOWNLOAD_DIR}/native" ]]; then
-    mv "${DOWNLOAD_DIR}/native"/* "$NATIVE_DIR"/
+  log "Extracting native bundle to ${native_extract_dir}"
+  unzip -q "$native_bundle_path" -d "$native_extract_dir"
+  if [[ -d "${native_extract_dir}/native" ]]; then
+    cp -R "${native_extract_dir}/native/." "$NATIVE_DIR/"
   else
-    mv "${DOWNLOAD_DIR}/docker-compose.yml" "${DOWNLOAD_DIR}/entrypoint.sh" "${DOWNLOAD_DIR}/.env.example" "${DOWNLOAD_DIR}/README.md" "$NATIVE_DIR"/ 2>/dev/null || true
+    cp -R "${native_extract_dir}/." "$NATIVE_DIR/"
   fi
 
   DOCKER_COMPOSE_FILE="$NATIVE_DIR/docker-compose.yml"
