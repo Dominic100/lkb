@@ -7,8 +7,8 @@ param(
   [string]$ExtensionBundleUrl = "https://github.com/Dominic100/lkb/releases/latest/download/lkb-extension.zip",
   [string]$NativeBundleUrl = "https://github.com/Dominic100/lkb/releases/latest/download/lkb-native.zip",
   [string]$Models = "qwen2.5:7b",
-  [string]$ExtensionDir = "$env:USERPROFILE\.lkb-extension",
-  [string]$NativeDir = "$env:USERPROFILE\.lkb-native"
+  [string]$ExtensionDir = "$env:USERPROFILE\lkb-extension",
+  [string]$NativeDir = "$env:USERPROFILE\lkb-native"
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,7 +23,7 @@ $ScriptRoot = if ($PSScriptRoot -and $PSScriptRoot.Trim().Length -gt 0) {
 } else {
   (Get-Location).Path
 }
-$DownloadDir = Join-Path $ScriptRoot ".downloaded-extension"
+$DownloadDir = Join-Path $ScriptRoot "downloaded-extension"
 $OpenBrowserAfterSetup = $true
 
 function Write-Log {

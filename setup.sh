@@ -17,9 +17,9 @@ if [[ -n "${BASH_SOURCE:-}" ]]; then
 fi
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_DIR_SOURCE")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
-DOWNLOAD_DIR="${PROJECT_DIR}/.downloaded-extension"
-EXTENSION_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/extension"
-NATIVE_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/native"
+DOWNLOAD_DIR="${PROJECT_DIR}/downloaded-extension"
+EXTENSION_DIR_DEFAULT="${PROJECT_DIR}/lkb-extension"
+NATIVE_DIR_DEFAULT="${PROJECT_DIR}/lkb-native"
 
 log() {
   printf '%s\n' "[setup] $*"

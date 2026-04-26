@@ -69,7 +69,7 @@ Use this if you do not publish to the Chrome Web Store.
 3. Open `chrome://extensions`.
 4. Enable Developer Mode.
 5. Click Load unpacked.
-6. Select the extracted extension folder created by the setup script.
+6. Select the `lkb-extension` folder created by the setup script.
 
 ## Quick Start
 
@@ -102,7 +102,7 @@ The first startup will pull the configured Ollama model into the local Docker vo
 
 5. Load extension:
 - For Web Store installs, install the published extension and keep the local services running.
-- For unpacked installs, open `chrome://extensions`, enable Developer Mode, click Load unpacked, and select the local extension folder.
+- For unpacked installs, open `chrome://extensions`, enable Developer Mode, click Load unpacked, and select the `lkb-extension` folder.
 
 ## Docker Services
 
