@@ -343,216 +343,221 @@ async function testStorage() {
   }
 }
 
-// Generate optimized BM25 vector (production-grade search)
-async function generateArticleVector(article) {
+const FALLBACK_VECTOR_SIZE = 256;
+const EMBEDDING_TEXT_LIMIT = 12000;
+
+function normalizeVector(vector) {
+  if (!Array.isArray(vector) || vector.length === 0) return [];
+  const magnitude = Math.sqrt(vector.reduce((sum, value) => sum + (Number(value) || 0) ** 2, 0));
+  if (!magnitude) return vector.map(() => 0);
+  return vector.map((value) => Number(value) / magnitude);
+}
+
+function buildEmbeddingText(source, tags = [], title = '') {
+  if (source && typeof source === 'object' && !Array.isArray(source)) {
+    const article = source;
+    const parts = [
+      article.title || '',
+      article.summary || '',
+      article.originalText || '',
+      Array.isArray(article.tags) ? article.tags.join(' ') : '',
+      article.notes || ''
+    ];
+    return parts.filter(Boolean).join('\n\n').replace(/\s+/g, ' ').trim().slice(0, EMBEDDING_TEXT_LIMIT);
+  }
+
+  const parts = [
+    title || '',
+    Array.isArray(tags) ? tags.join(' ') : '',
+    String(source || '')
+  ];
+
+  return parts.filter(Boolean).join('\n\n').replace(/\s+/g, ' ').trim().slice(0, EMBEDDING_TEXT_LIMIT);
+}
+
+async function tryGenerateEmbeddingVector(text) {
+  if (typeof generateEmbeddingVector !== 'function') return null;
+
   try {
-    console.log(`🔄 Generating vector for: "${article.title.substring(0, 50)}..."`);
-    
-    const fullText = `${article.title} ${article.summary} ${article.originalText} ${(article.tags || []).join(' ')}`.substring(0, 50000);
-    const vector = generateBM25Vector(fullText, article.tags, article.title);
-    
-    console.log(`✓ BM25 vector generated (${vector.length} dimensions)`);
-    return vector;
-    
+    const vector = await generateEmbeddingVector(text);
+    return Array.isArray(vector) ? normalizeVector(vector) : null;
   } catch (error) {
-    console.error('❌ Error generating vector:', error);
+    console.warn('Embedding generation failed, falling back to local vectorization:', error.message);
     return null;
   }
 }
 
-// BM25 algorithm - industry standard for search ranking
-function generateBM25Vector(text, tags = [], title = '') {
-  const k1 = 1.5;  // BM25 parameter (term frequency saturation)
-  const b = 0.75;  // BM25 parameter (length normalization)
-  const vector = new Array(256).fill(0);
-  
-  // Tokenize and calculate term frequencies
-  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-  const titleWords = title.toLowerCase().match(/\b\w+\b/g) || [];
-  
-  const termFreq = {};
-  const docLength = words.length;
-  const avgLength = 50; // Average document length in words
-  
-  // Count term frequencies
-  words.forEach(word => {
-    if (word.length > 2) {
-      termFreq[word] = (termFreq[word] || 0) + 1;
-    }
-  });
-  
-  // Map words to vector dimensions using BM25 scoring
-  Object.entries(termFreq).forEach(([word, freq]) => {
-    // BM25 scoring formula
-    const idf = Math.log(1 + freq); // Inverse document frequency
-    const tf = (freq * (k1 + 1)) / 
-               (freq + k1 * (1 - b + b * (docLength / avgLength)));
-    
-    const bm25Score = idf * tf;
-    
-    // Map to vector dimensions
-    let hash = 0;
-    for (let i = 0; i < word.length; i++) {
-      hash = ((hash << 5) - hash) + word.charCodeAt(i);
-    }
-    
-    const dim1 = Math.abs(hash) % 256;
-    const dim2 = Math.abs(hash >> 8) % 256;
-    
-    vector[dim1] = (vector[dim1] || 0) + bm25Score;
-    vector[dim2] = (vector[dim2] || 0) + bm25Score * 0.5;
-  });
-  
-  // Boost words from title (3x weight)
-  titleWords.forEach(word => {
-    if (word.length > 2 && termFreq[word]) {
-      let hash = 0;
-      for (let i = 0; i < word.length; i++) {
-        hash = ((hash << 5) - hash) + word.charCodeAt(i);
-      }
-      const dim = Math.abs(hash) % 256;
-      vector[dim] = (vector[dim] || 0) + termFreq[word] * 3.0;
-    }
-  });
-  
-  // Tag boost (2x weight)
-  tags.forEach(tag => {
-    let hash = 0;
-    for (let i = 0; i < tag.length; i++) {
-      hash = ((hash << 5) - hash) + tag.charCodeAt(i);
-    }
-    const dim = Math.abs(hash) % 256;
-    vector[dim] = (vector[dim] || 0) + 2.0;
-  });
-  
-  // Normalize to unit length (cosine similarity)
-  const magnitude = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
-  return magnitude > 0 ? vector.map(v => v / magnitude) : vector;
-}
+async function generateArticleVector(article) {
+  try {
+    const title = article?.title || 'Untitled';
+    console.log(`🔄 Generating vector for: "${title.substring(0, 50)}..."`);
 
-// Lightweight vector generation as fallback
-function generateSimpleVector(text) {
-  // Hash text into a simple 128-dim vector (deterministic, repeatable)
-  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-  const vector = new Array(128).fill(0);
-  
-  words.forEach((word, idx) => {
-    // Simple hash function
-    let hash = 0;
-    for (let i = 0; i < word.length; i++) {
-      hash = ((hash << 5) - hash) + word.charCodeAt(i);
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    
-    // Map hash to vector dimensions
-    const dim1 = Math.abs(hash) % 128;
-    const dim2 = Math.abs(hash >> 16) % 128;
-    vector[dim1] = (vector[dim1] || 0) + 1;
-    vector[dim2] = (vector[dim2] || 0) + 1;
-  });
-  
-  // Normalize vector
-  const magnitude = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
-  return magnitude > 0 ? vector.map(v => v / magnitude) : vector;
-}
+    const embeddingText = buildEmbeddingText(article);
+    const vector = (await tryGenerateEmbeddingVector(embeddingText)) || generateSimpleVector(embeddingText);
 
-// Helper: Check which embedder is available
-async function checkEmbedderCapability() {
-  if (self.ai?.textEmbedder) {
-    console.log('✓ Chrome AI Embedder available (Gemini Nano)');
-    return 'native';
-  } else if (self.ai?.languageModel) {
-    console.log('⚠️ Only language model available, using Gemini API');
-    return 'gemini';
-  } else {
-    console.log('⚠️ No AI APIs available, using TF-IDF fallback');
-    return 'fallback';
+    console.log(`✓ Vector generated (${vector.length} dimensions)`);
+    return vector;
+  } catch (error) {
+    console.error('❌ Error generating vector:', error);
+    return generateSimpleVector(buildEmbeddingText(article));
   }
 }
 
+async function generateBM25Vector(text, tags = [], title = '') {
+  const embeddingText = buildEmbeddingText(text, tags, title);
+  const vector = (await tryGenerateEmbeddingVector(embeddingText)) || generateSimpleVector(embeddingText);
+  return vector;
+}
+
+function generateSimpleVector(text) {
+  const tokens = String(text || '')
+    .toLowerCase()
+    .match(/\b[\p{L}\p{N}]+\b/gu) || String(text || '').toLowerCase().match(/\b\w+\b/g) || [];
+  const vector = new Array(FALLBACK_VECTOR_SIZE).fill(0);
+
+  if (tokens.length === 0) return vector;
+
+  tokens.forEach((token, index) => {
+    let hash = 2166136261;
+    for (let i = 0; i < token.length; i++) {
+      hash ^= token.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    const dim1 = Math.abs(hash) % FALLBACK_VECTOR_SIZE;
+    const dim2 = Math.abs((hash >>> 16) ^ (hash << 5)) % FALLBACK_VECTOR_SIZE;
+    const weight = 1 + Math.min(token.length, 12) / 12 + (index < 12 ? 0.25 : 0);
+
+    vector[dim1] += weight;
+    vector[dim2] += weight * 0.5;
+  });
+
+  return normalizeVector(vector);
+}
+
+async function checkEmbedderCapability() {
+  try {
+    const status = await canEmbed?.();
+    if (status === 'available') {
+      console.log('ℹ️ Ollama embeddings are available');
+      return 'available';
+    }
+    if (status === 'downloadable') {
+      console.log('ℹ️ Ollama embedding model needs to be pulled');
+      return 'downloadable';
+    }
+  } catch (error) {
+    console.warn('Embedding capability check failed:', error.message);
+  }
+
+  console.log('ℹ️ Using fallback local vectorization');
+  return 'fallback';
+}
 
 /**
  * Calculates cosine similarity between two vectors.
- * Assumes vectors are normalized (which your BM25 vector is).
+ * Assumes vectors are normalized.
  */
 function cosineSimilarity(vecA, vecB) {
   if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
-  
+
   let dotProduct = 0;
   for (let i = 0; i < vecA.length; i++) {
     dotProduct += (vecA[i] || 0) * (vecB[i] || 0);
   }
-  
-  // Since vectors are normalized, magA and magB are ~1.
-  // We can just return the dot product.
+
   return dotProduct;
 }
 
+function articleTextForSearch(article) {
+  return [
+    article.title || '',
+    article.summary || '',
+    article.originalText || '',
+    article.notes || '',
+    Array.isArray(article.tags) ? article.tags.join(' ') : ''
+  ].join(' ').toLowerCase();
+}
+
+function keywordScore(article, query) {
+  const articleText = articleTextForSearch(article);
+  const title = String(article.title || '').toLowerCase();
+  const lowerQuery = String(query || '').toLowerCase().trim();
+
+  if (!lowerQuery) return 0;
+
+  let score = 0;
+  if (title.includes(lowerQuery)) score += 1.5;
+  if (articleText.includes(lowerQuery)) score += 1.0;
+
+  const terms = lowerQuery.split(/\s+/).filter(Boolean);
+  for (const term of terms) {
+    if (term.length < 2) continue;
+    if (title.includes(term)) score += 0.25;
+    if (articleText.includes(term)) score += 0.15;
+  }
+
+  return Math.min(score, 2.5);
+}
+
 /**
- * Performs semantic search using vectors.
+ * Performs semantic search using embeddings and keyword boosts.
  */
 async function semanticSearch(query, allArticles) {
-  // 1. Generate a vector for the search query itself
-  const queryVector = generateBM25Vector(query, [], query);
-  
-  // 2. Score all articles against the query vector
+  const queryVector = await generateBM25Vector(query, [], query);
+
   const scoredArticles = [];
   for (const article of allArticles) {
-    if (article.vector) {
-      // 3. Calculate similarity
-      const similarity = cosineSimilarity(queryVector, article.vector);
-      
-      // Set a threshold to filter out irrelevant results
-      if (similarity > 0.05) { 
-        scoredArticles.push({ ...article, score: similarity });
-      }
+    const articleVector = Array.isArray(article.vector) && article.vector.length === queryVector.length
+      ? article.vector
+      : await generateArticleVector(article);
+
+    if (!Array.isArray(articleVector) || articleVector.length !== queryVector.length) {
+      continue;
+    }
+
+    const similarity = cosineSimilarity(queryVector, articleVector);
+    const combinedScore = similarity * 0.85 + keywordScore(article, query) * 0.15;
+
+    if (combinedScore > 0.05) {
+      scoredArticles.push({ ...article, score: combinedScore });
     }
   }
-  
-  // 4. Return sorted by highest score
+
   return scoredArticles.sort((a, b) => b.score - a.score);
 }
 
 async function searchArticles(query) {
   try {
     const allArticles = await getAllArticles();
-    const lowerQuery = query.toLowerCase().trim();
-    
-    if (!lowerQuery) return allArticles; // Return all if query is empty
+    const lowerQuery = String(query || '').toLowerCase().trim();
 
-    // ===================================
-    // 1. Keyword Search
-    // ===================================
-    const keywordResults = allArticles.filter(article => 
-      article.title.toLowerCase().includes(lowerQuery) ||
-      (article.summary && article.summary.toLowerCase().includes(lowerQuery)) ||
-      (article.originalText && article.originalText.toLowerCase().includes(lowerQuery)) ||
-      (article.url && article.url.toLowerCase().includes(lowerQuery))
-    );
+    if (!lowerQuery) return allArticles;
 
-    // ===================================
-    // 2. Semantic (Vector) Search
-    // ===================================
+    const keywordResults = allArticles
+      .map((article) => ({
+        ...article,
+        score: keywordScore(article, lowerQuery)
+      }))
+      .filter((article) => article.score > 0);
+
     const semanticResults = await semanticSearch(query, allArticles);
-
-    // ===================================
-    // 3. Combine & Rank Results
-    // ===================================
     const combined = new Map();
 
-    // Add keyword results with a base score
-    keywordResults.forEach(a => {
-      combined.set(a.id, { ...a, score: (combined.get(a.id)?.score || 0) + 1.0 });
-    });
+    for (const article of keywordResults) {
+      combined.set(article.id, { ...article, score: (combined.get(article.id)?.score || 0) + article.score });
+    }
 
-    // Add semantic results, adding to their score
-    semanticResults.forEach(a => {
-      combined.set(a.id, { ...a, score: (combined.get(a.id)?.score || 0) + a.score });
-    });
+    for (const article of semanticResults) {
+      combined.set(article.id, { ...article, score: (combined.get(article.id)?.score || 0) + article.score });
+    }
 
-    // Convert map back to array and sort by final score
-    return Array.from(combined.values()).sort((a, b) => b.score - a.score);
-
+    return Array.from(combined.values())
+      .sort((a, b) => b.score - a.score)
+      .map((article) => ({
+        ...article,
+        searchScore: article.score
+      }));
   } catch (error) {
     console.error('Error searching articles:', error);
     throw error;
@@ -561,38 +566,40 @@ async function searchArticles(query) {
 
 async function findSimilarArticles(articleId, topN = 5) {
   console.log(`Finding articles similar to: ${articleId}`);
-  
-  // 1. Get the target article's vector
+
   const targetArticle = await getArticle(articleId);
   if (!targetArticle) {
     throw new Error('Target article not found.');
   }
-  if (!targetArticle.vector) {
-    throw new Error('Target article does not have a vector. Please re-save it.');
+
+  const targetVector = Array.isArray(targetArticle.vector) ? targetArticle.vector : await generateArticleVector(targetArticle);
+
+  if (!Array.isArray(targetVector) || targetVector.length === 0) {
+    throw new Error('Target article does not have a usable vector yet. Please re-save it.');
   }
-  
-  const targetVector = targetArticle.vector;
-  
-  // 2. Get all other articles
+
   const allArticles = await getAllArticles();
-  
-  // 3. Score all articles against the target vector
   const scoredArticles = [];
+
   for (const article of allArticles) {
-    // Don't compare the article to itself
     if (article.id === articleId) continue;
-    
-    if (article.vector) {
-      const similarity = cosineSimilarity(targetVector, article.vector);
-      
-      // Use a similarity threshold to keep results relevant
-      if (similarity > 0.1) { 
-        scoredArticles.push({ ...article, score: similarity });
-      }
+
+    const articleVector = Array.isArray(article.vector) && article.vector.length === targetVector.length
+      ? article.vector
+      : await generateArticleVector(article);
+
+    if (!Array.isArray(articleVector) || articleVector.length !== targetVector.length) {
+      continue;
+    }
+
+    const similarity = cosineSimilarity(targetVector, articleVector);
+    const combinedScore = similarity * 0.9 + keywordScore(article, targetArticle.title || '') * 0.1;
+
+    if (combinedScore > 0.08) {
+      scoredArticles.push({ ...article, score: combinedScore });
     }
   }
-  
-  // 4. Return the top N most similar articles
+
   return scoredArticles.sort((a, b) => b.score - a.score).slice(0, topN);
 }
 

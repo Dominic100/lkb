@@ -14,10 +14,16 @@
       <p class="subtitle">Your private knowledge vault</p>
     </header>
 
-    <!-- Gemini Status Badge -->
-    <div id="geminiStatus" class="gemini-status hidden">
+    <!-- LLM Status Badge -->
+    <div id="llmStatus" class="llm-status hidden">
       <span class="status-icon">⚡</span>
-      <span class="status-text">Checking AI...</span>
+      <span class="status-text">Checking LLM...</span>
+    </div>
+
+    <!-- LLM Loading Indicator -->
+    <div id="llmLoadingIndicator" class="llm-loading hidden" aria-live="polite">
+      <span class="llm-spinner" aria-hidden="true"></span>
+      <span id="llmLoadingText">Loading model...</span>
     </div>
 
     <!-- Search Bar -->
@@ -48,6 +54,9 @@
       </button>
       <button id="chatButton" class="btn btn-secondary">
         💬 Chat with Knowledge
+      </button>
+      <button id="llmToggleBtn" class="btn btn-secondary">
+        ▶️ Start LLM
       </button>
     </div>
 

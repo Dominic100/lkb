@@ -4,6 +4,10 @@
 const saveCurrentPageBtn = document.getElementById('saveCurrentPage');
 const multiSummarizeBtn = document.getElementById('multiSummarizeBtn');
 const chatButton = document.getElementById('chatButton');
+const llmToggleBtn = document.getElementById('llmToggleBtn');
+const llmStatusBadge = document.getElementById('llmStatus');
+const llmLoadingIndicator = document.getElementById('llmLoadingIndicator');
+const llmLoadingText = document.getElementById('llmLoadingText');
 const searchInput = document.getElementById('searchInput');
 const articlesList = document.getElementById('articlesList');
 const emptyState = document.getElementById('emptyState');
@@ -46,19 +50,35 @@ let selectedArticles = new Set();
 let selectedTags = new Set();
 let currentEditingArticleId = null;
 let currentArticleForView = null;
+let currentLLMStatus = null;
+let llmStatusPoller = null;
+const defaultChatInputPlaceholder = chatInput?.placeholder || 'Ask me anything about your saved knowledge...';
 
 // Initialize on popup load
 document.addEventListener('DOMContentLoaded', async () => {
   await loadArticles();
   renderArticles();
   setupEventListeners();
-  checkGeminiStatus();
+  await checkLLMStatus();
+
+  if (llmStatusPoller) clearInterval(llmStatusPoller);
+  llmStatusPoller = setInterval(() => {
+    checkLLMStatus();
+  }, 5000);
+});
+
+window.addEventListener('unload', () => {
+  if (llmStatusPoller) {
+    clearInterval(llmStatusPoller);
+    llmStatusPoller = null;
+  }
 });
 
 // Setup event listeners
 function setupEventListeners() {
   if (saveCurrentPageBtn) saveCurrentPageBtn.addEventListener('click', handleSaveCurrentPage);
   if (chatButton) chatButton.addEventListener('click', showChatView);
+  if (llmToggleBtn) llmToggleBtn.addEventListener('click', handleLLMToggle);
   if (backToListBtn) backToListBtn.addEventListener('click', showArticlesView);
   if (searchInput) searchInput.addEventListener('input', handleSearch);
   if (sendChatBtn) sendChatBtn.addEventListener('click', handleSendChat);
@@ -91,36 +111,140 @@ function setupEventListeners() {
   console.log('✓ Event listeners attached');
 }
 
-// Gemini status check
-async function checkGeminiStatus() {
+// LLM runtime status check
+async function checkLLMStatus() {
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'checkGeminiStatus' });
-    const statusBadge = document.getElementById('geminiStatus');
-    
-    if (response && response.success) {
+    const response = await chrome.runtime.sendMessage({ action: 'checkLLMStatus' });
+    const statusBadge = llmStatusBadge;
+
+    if (response && response.success && statusBadge) {
       const status = response.status;
+      currentLLMStatus = status;
+
       statusBadge.classList.remove('hidden', 'available', 'downloading', 'unavailable');
-      
-      if (status.summarizer === 'available' || status.prompt === 'available') {
+
+      if (status.ready) {
         statusBadge.classList.add('available');
         statusBadge.querySelector('.status-icon').textContent = '⚡';
-        statusBadge.querySelector('.status-text').textContent = 'Gemini Nano Active';
-      } else if (status.summarizer === 'downloading' || status.prompt === 'downloading') {
+        statusBadge.querySelector('.status-text').textContent = 'LLM Ready';
+      } else if (status.runtime?.loading) {
         statusBadge.classList.add('downloading');
         statusBadge.querySelector('.status-icon').textContent = '⏳';
-        statusBadge.querySelector('.status-text').textContent = 'AI Downloading...';
-      } else if (status.summarizer === 'downloadable' || status.prompt === 'downloadable') {
+        statusBadge.querySelector('.status-text').textContent = status.runtime?.message || 'LLM loading...';
+      } else if (status.runtime?.phase === 'model-missing' || status.summarizer === 'downloadable' || status.prompt === 'downloadable') {
         statusBadge.classList.add('downloading');
         statusBadge.querySelector('.status-icon').textContent = '💾';
-        statusBadge.querySelector('.status-text').textContent = 'AI Available (Click to Enable)';
+        statusBadge.querySelector('.status-text').textContent = status.runtime?.message || 'Model not pulled yet';
       } else {
         statusBadge.classList.add('unavailable');
-        statusBadge.querySelector('.status-icon').textContent = '🔄';
-        statusBadge.querySelector('.status-text').textContent = 'Fallback Mode';
+        statusBadge.querySelector('.status-icon').textContent = '🔌';
+        statusBadge.querySelector('.status-text').textContent = status.runtime?.message || 'LLM unavailable';
       }
+
+      // Update LLM toggle button label
+      if (llmToggleBtn) {
+        const loading = !!status.runtime?.loading;
+        const readyOrLoaded = !!status.ready || !!status.loaded;
+        llmToggleBtn.disabled = loading;
+        llmToggleBtn.textContent = loading
+          ? '⏳ Loading LLM...'
+          : (readyOrLoaded ? '⏹️ Stop LLM' : '▶️ Start LLM');
+      }
+
+      setLLMActionAvailability(status);
+      renderLLMLoadingIndicator(status);
     }
   } catch (error) {
-    console.error('Error checking Gemini status:', error);
+    console.error('Error checking LLM status:', error);
+    setLLMActionAvailability({ ready: false, runtime: { loading: false } });
+    renderLLMLoadingIndicator({ ready: false, runtime: { loading: false, message: 'LLM unavailable' } });
+  }
+}
+
+function renderLLMLoadingIndicator(status) {
+  if (!llmLoadingIndicator || !llmLoadingText) return;
+
+  const loading = !!status?.runtime?.loading;
+  if (!loading) {
+    llmLoadingIndicator.classList.add('hidden');
+    return;
+  }
+
+  const phase = status?.runtime?.phase || 'loading';
+  const phaseLabelMap = {
+    checking: 'Checking Ollama server and model availability...',
+    warming: 'Loading model into memory...',
+    'server-unavailable': 'Waiting for Ollama server...',
+    'model-missing': 'Model not found locally. Pulling model...',
+    loading: 'LLM is loading...'
+  };
+
+  llmLoadingText.textContent = status?.runtime?.message || phaseLabelMap[phase] || 'LLM is loading...';
+  llmLoadingIndicator.classList.remove('hidden');
+}
+
+function setLLMActionAvailability(status) {
+  const ready = !!status?.ready;
+  const loading = !!status?.runtime?.loading;
+  const disableLLMActions = !ready;
+
+  if (chatButton) chatButton.disabled = disableLLMActions;
+  if (sendChatBtn) sendChatBtn.disabled = disableLLMActions;
+  if (chatInput) {
+    chatInput.disabled = disableLLMActions;
+    chatInput.placeholder = loading
+      ? 'LLM is loading... please wait'
+      : (disableLLMActions ? 'Start LLM and wait until ready...' : defaultChatInputPlaceholder);
+  }
+  if (rephraseNoteBtn) rephraseNoteBtn.disabled = disableLLMActions;
+  if (multiSummarizeBtn) multiSummarizeBtn.disabled = disableLLMActions;
+}
+
+function ensureLLMReady(featureLabel) {
+  if (currentLLMStatus?.ready) return true;
+
+  const reason = currentLLMStatus?.runtime?.message || 'LLM is still loading or unavailable.';
+  alert(`${reason}\n\n${featureLabel} is disabled until the model is ready for inference.`);
+  return false;
+}
+
+async function handleLLMToggle() {
+  if (!llmToggleBtn) return;
+
+  if (currentLLMStatus?.runtime?.loading) {
+    return;
+  }
+
+  llmToggleBtn.disabled = true;
+  try {
+    const statusResp = await chrome.runtime.sendMessage({ action: 'checkLLMStatus' });
+    if (!statusResp || !statusResp.success) {
+      alert('Could not determine LLM status');
+      return;
+    }
+
+    const loaded = !!statusResp.status?.loaded || !!statusResp.status?.ready;
+    if (loaded) {
+      const stopResp = await chrome.runtime.sendMessage({ action: 'stopLLM' });
+      if (stopResp && stopResp.success) {
+        llmToggleBtn.textContent = '▶️ Start LLM';
+      } else {
+        alert('Failed to stop LLM: ' + (stopResp?.error || 'unknown'));
+      }
+    } else {
+      llmToggleBtn.textContent = '⏳ Loading LLM...';
+      const startResp = await chrome.runtime.sendMessage({ action: 'startLLM' });
+      if (startResp && startResp.success) {
+        llmToggleBtn.textContent = '⏹️ Stop LLM';
+      } else {
+        alert('Failed to start LLM: ' + (startResp?.error || 'unknown'));
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    alert('LLM control error: ' + e.message);
+  } finally {
+    await checkLLMStatus();
   }
 }
 
@@ -567,6 +691,10 @@ function startNewChat() {
 
 // Show chat view
 function showChatView() {
+  if (!ensureLLMReady('Chat')) {
+    return;
+  }
+
   document.querySelector('.search-container').style.display = 'none';
   document.querySelector('.actions').style.display = 'none';
   document.querySelector('.articles-section').style.display = 'none';
@@ -646,6 +774,10 @@ function updateArticleSelection(articleId, isSelected) {
 async function handleMultiSummarize() {
   if (selectedArticles.size < 2) {
     alert('Please select at least 2 articles to summarize');
+    return;
+  }
+
+  if (!ensureLLMReady('Multi-summary')) {
     return;
   }
   
@@ -764,6 +896,10 @@ async function handleMultiSummarize() {
 
 // Handle send chat
 async function handleSendChat() {
+  if (!ensureLLMReady('Chat')) {
+    return;
+  }
+
   const query = chatInput.value.trim();
   if (!query) return;
   
@@ -792,20 +928,28 @@ async function handleSendChat() {
     
     thinkingMsg.remove();
     
-    if (response && response.success) {
-      const assistantMessage = { role: 'assistant', content: response.answer, timestamp: Date.now() };
-      chatMessagesArray.push(assistantMessage);
-      addChatMessage('assistant', response.answer);
-      
-      currentChatSession.messages = chatMessagesArray;
-      await chrome.runtime.sendMessage({
-        action: 'saveChatSession',
-        session: currentChatSession
-      });
-    } else {
-      thinkingMsg.remove();
-      addChatMessage('assistant', 'Sorry, I encountered an error. Please try again.');
-    }
+      if (response && response.success) {
+        const assistantMessage = {
+          role: 'assistant',
+          content: response.answer,
+          citations: response.citations || [],
+          retrievedChunks: response.retrievedChunks || [],
+          retrieval: response.retrieval || null,
+          timestamp: Date.now()
+        };
+        chatMessagesArray.push(assistantMessage);
+        addChatMessage('assistant', response.answer, true, assistantMessage);
+        
+        currentChatSession.messages = chatMessagesArray;
+        currentChatSession.lastRetrieval = assistantMessage.retrieval;
+        await chrome.runtime.sendMessage({
+          action: 'saveChatSession',
+          session: currentChatSession
+        });
+      } else {
+        thinkingMsg.remove();
+        addChatMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+      }
   } catch (error) {
     console.error('Chat error:', error);
     thinkingMsg.remove();
@@ -814,10 +958,47 @@ async function handleSendChat() {
 }
 
 // Add chat message
-function addChatMessage(role, content, save = true) {
+function addChatMessage(role, content, save = true, metadata = null) {
   const div = document.createElement('div');
   div.className = `chat-message ${role}`;
-  div.textContent = content;
+
+  const text = document.createElement('div');
+  text.className = 'chat-message-text';
+  text.textContent = content;
+  div.appendChild(text);
+
+  if (role === 'assistant' && metadata) {
+    const citations = Array.isArray(metadata.citations) ? metadata.citations : [];
+    if (citations.length > 0) {
+      const citationsWrap = document.createElement('div');
+      citationsWrap.className = 'chat-citations';
+
+      const label = document.createElement('div');
+      label.className = 'chat-citations-label';
+      label.textContent = 'Sources';
+      citationsWrap.appendChild(label);
+
+      citations.slice(0, 5).forEach((citation) => {
+        const citationEl = document.createElement('div');
+        citationEl.className = 'chat-citation';
+        const sourceText = citation.articleTitle || 'Untitled';
+        const excerpt = citation.excerpt ? ` — ${citation.excerpt}` : '';
+        citationEl.textContent = `[${citation.label}] ${sourceText}${excerpt}`;
+        citationsWrap.appendChild(citationEl);
+      });
+
+      div.appendChild(citationsWrap);
+    }
+
+    const retrieval = metadata.retrieval;
+    if (retrieval) {
+      const retrievalEl = document.createElement('div');
+      retrievalEl.className = 'chat-retrieval-meta';
+      retrievalEl.textContent = `Retrieved ${retrieval.chunkCount || 0} chunk(s) • ${retrieval.citationCount || 0} citation(s)${retrieval.usedFallback ? ' • local fallback' : ''}`;
+      div.appendChild(retrievalEl);
+    }
+  }
+
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
   return div;
@@ -943,8 +1124,8 @@ async function handleSettings() {
       storageInfo = `Storage Used: ${info.usageInMB} MB / ${info.quotaInMB} MB (${info.percentUsed}%)`;
     }
 
-    // 2. NEW: Manually re-check Gemini Status
-    const statusResponse = await chrome.runtime.sendMessage({ action: 'checkGeminiStatus' });
+    // 2. NEW: Manually re-check LLM status
+    const statusResponse = await chrome.runtime.sendMessage({ action: 'checkLLMStatus' });
     
     let apiStatus = 'API Status: Could not be determined.';
     if (statusResponse && statusResponse.success) {
@@ -952,9 +1133,21 @@ async function handleSettings() {
       apiStatus = `
 API Status:
 • Summarizer: ${s.summarizer}
-• LanguageModel: ${s.prompt}
-• Proofreader: ${s.proofreader}  <-- !! LOOK AT THIS !!
+• Chat Model: ${s.prompt}
+• Loaded: ${!!s.loaded}
+• Ready: ${!!s.ready}
+• Phase: ${s.runtime?.phase || 'unknown'}
+• Detail: ${s.runtime?.message || 'n/a'}
       `.trim();
+    }
+
+    const ragResponse = await chrome.runtime.sendMessage({ action: 'checkRAGDBStatus' });
+    let ragStatus = 'RAG DB: unavailable';
+    if (ragResponse?.success) {
+      const rs = ragResponse.status || {};
+      ragStatus = rs.available
+        ? `RAG DB: connected (${rs.collection} @ ${rs.baseUrl})`
+        : `RAG DB: unavailable (${rs.reason || 'not reachable'})`;
     }
     
     const settingsText = `
@@ -965,6 +1158,8 @@ ${storageInfo}
 📚 Total Articles: ${articles.length}
 
 ${apiStatus}
+
+${ragStatus}
 
 Developer: Check console for logs
     `.trim();
@@ -1219,9 +1414,13 @@ function generateInsightsSummary(stats) {
 }
 
 /**
- * Uses the LanguageModel API to suggest alternative phrasings
+ * Uses the local LLM API to suggest alternative phrasings
  */
 async function handleRephraseNote() {
+  if (!ensureLLMReady('Rephrase')) {
+    return;
+  }
+
   const text = noteTextarea.value;
   if (!text.trim()) return;
 

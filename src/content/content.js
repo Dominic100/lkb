@@ -54,27 +54,41 @@ async function extractAndSaveContent(selectionText = null) {
     // ========================================
     // STEP 2: GENERATE SUMMARY
     // ========================================
-    showNotification('Generating summary...', 'info');
-    console.log('📝 Requesting summarization...');
-    
-    let summaryResponse;
+    showNotification('Checking LLM readiness...', 'info');
+    let llmReady = false;
     try {
-      summaryResponse = await chrome.runtime.sendMessage({
-        action: 'summarizeText',
-        text: pageData.originalText
-      });
-      
-      if (summaryResponse?.success && summaryResponse?.summary) {
-        pageData.summary = summaryResponse.summary;
-        console.log('✓ Summary generated:', pageData.summary.substring(0, 100));
-      } else {
-        console.warn('⚠️ Summary generation failed, continuing with placeholder');
+      const statusResponse = await chrome.runtime.sendMessage({ action: 'checkLLMStatus' });
+      llmReady = !!(statusResponse?.success && statusResponse?.status?.ready);
+    } catch (statusError) {
+      console.warn('⚠️ Could not check LLM status:', statusError.message);
+    }
+
+    if (llmReady) {
+      showNotification('Generating summary...', 'info');
+      console.log('📝 Requesting summarization...');
+
+      let summaryResponse;
+      try {
+        summaryResponse = await chrome.runtime.sendMessage({
+          action: 'summarizeText',
+          text: pageData.originalText
+        });
+
+        if (summaryResponse?.success && summaryResponse?.summary) {
+          pageData.summary = summaryResponse.summary;
+          console.log('✓ Summary generated:', pageData.summary.substring(0, 100));
+        } else {
+          console.warn('⚠️ Summary generation failed, continuing with placeholder');
+          pageData.summary = 'Summary pending...';
+        }
+      } catch (summaryError) {
+        console.warn('⚠️ Summary request failed:', summaryError.message);
         pageData.summary = 'Summary pending...';
       }
-    } catch (summaryError) {
-      console.warn('⚠️ Summary request failed:', summaryError.message);
-      // Continue with placeholder summary
-      pageData.summary = 'Summary pending...';
+    } else {
+      console.log('⏳ LLM not ready yet - skipping summarization call');
+      pageData.summary = 'Summary pending (LLM still loading)...';
+      showNotification('LLM still loading. Saved with pending summary.', 'warning');
     }
     
     // ========================================

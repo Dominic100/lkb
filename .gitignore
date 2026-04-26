@@ -1,2 +1,5 @@
 LocalFirst-KB-Project-Plan.md
 videos/
+native/ollama-data/
+native/qdrant-data/
+native/.env

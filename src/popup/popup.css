@@ -41,8 +41,8 @@ html, body {
   opacity: 0.9;
 }
 
-/* Gemini Status Badge */
-.gemini-status {
+/* LLM Status Badge */
+.llm-status {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,21 +57,21 @@ html, body {
   flex-shrink: 0;
 }
 
-.gemini-status.hidden {
+.llm-status.hidden {
   display: none;
 }
 
-.gemini-status.available {
+.llm-status.available {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border-bottom: 1px solid #047857;
 }
 
-.gemini-status.downloading {
+.llm-status.downloading {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   border-bottom: 1px solid #b45309;
 }
 
-.gemini-status.unavailable {
+.llm-status.unavailable {
   background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
   border-bottom: 1px solid #374151;
 }
@@ -102,6 +102,41 @@ html, body {
   }
   50% {
     opacity: 0.7;
+  }
+}
+
+.llm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #495057;
+  background: #fff8db;
+  border-bottom: 1px solid #ffe066;
+  flex-shrink: 0;
+}
+
+.llm-loading.hidden {
+  display: none;
+}
+
+.llm-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffd43b;
+  border-top-color: #f08c00;
+  border-radius: 50%;
+  animation: llmSpin 0.8s linear infinite;
+}
+
+@keyframes llmSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -166,6 +201,19 @@ html, body {
 
 .btn-secondary:hover {
   background: #e9ecef;
+}
+
+.btn:disabled,
+.btn-small:disabled,
+.btn-send:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.chat-input:disabled {
+  background: #f1f3f5;
+  color: #6c757d;
 }
 
 /* Articles Section */
@@ -523,6 +571,40 @@ html, body {
   align-self: flex-start;
   background: #f1f3f5;
   color: #212529;
+}
+
+.chat-message-text {
+  white-space: pre-wrap;
+}
+
+.chat-citations {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-citations-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #667eea;
+}
+
+.chat-citation {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #495057;
+}
+
+.chat-retrieval-meta {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #6c757d;
+  font-style: italic;
 }
 
 .chat-input-container {

@@ -8,8 +8,7 @@
     "tabs",
     "scripting",
     "contextMenus",
-    "activeTab",
-    "ai"
+    "activeTab"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {

@@ -1,0 +1,28 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: lkb-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      # Named volume keeps Ollama state local to the user's machine without shipping model blobs in the repo.
+      - ollama-data:/root/.ollama
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      # Comma-separated list of models to pull on startup. Set in native/.env.
+      - MODELS=${MODELS:-qwen2.5:7b}
+    entrypoint: ["/bin/sh","/entrypoint.sh"]
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: lkb-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+volumes:
+  ollama-data:
+  qdrant-data:
