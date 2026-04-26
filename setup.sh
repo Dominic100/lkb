@@ -11,7 +11,11 @@ ENV_EXAMPLE_FILE="native/.env.example"
 MODELS_DEFAULT="qwen2.5:7b"
 OPEN_CHROME_AFTER_SETUP="true"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-${0}}")" && pwd)"
+SCRIPT_DIR_SOURCE="$0"
+if [[ -n "${BASH_SOURCE:-}" ]]; then
+  SCRIPT_DIR_SOURCE="${BASH_SOURCE[0]}"
+fi
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_DIR_SOURCE")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 DOWNLOAD_DIR="${PROJECT_DIR}/.downloaded-extension"
 EXTENSION_DIR_DEFAULT="${PROJECT_DIR}/.downloaded-extension/extension"
