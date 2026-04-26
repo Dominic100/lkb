@@ -211,6 +211,31 @@ wait_for_service() {
   done
 }
 
+wait_for_ollama_models_ready() {
+  local retries="${1:-300}"
+  local sleep_seconds="${2:-1}"
+  local counter=0
+
+  if [[ -z "$MODELS" ]]; then
+    log "No models configured; skipping model readiness wait"
+    return 0
+  fi
+
+  log "Waiting for Ollama model readiness..."
+  while true; do
+    if docker compose -f "$DOCKER_COMPOSE_FILE" --env-file "$ENV_FILE" logs --no-color ollama 2>/dev/null | grep -Fq "Startup complete. Models are ready for inference."; then
+      log "Ollama models are ready for inference"
+      return 0
+    fi
+
+    counter=$((counter + 1))
+    if [[ "$counter" -ge "$retries" ]]; then
+      die "Ollama models did not become ready in time"
+    fi
+    sleep "$sleep_seconds"
+  done
+}
+
 print_next_steps() {
   case "$MODE" in
     webstore)
@@ -258,6 +283,7 @@ main() {
   prepare_env_file
   start_services
   wait_for_service "http://127.0.0.1:11434/api/tags" "Ollama" 600 1
+  wait_for_ollama_models_ready 600 1
   wait_for_service "http://127.0.0.1:6333/collections" "Qdrant" 120 1
   print_next_steps
   open_browser_help
